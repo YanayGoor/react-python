@@ -5,10 +5,14 @@ import * as serviceWorker from './serviceWorker';
 
 import PYTHON from './index.py';
 
+const Welcome = (props) => {
+  return <h1>Hello, {props.name}</h1>;
+}
+
 window.languagePluginLoader.then(
 	() => {
-		window.pythonReact = { React, ReactDOM };
-		window.pyodide.runPython(PYTHON.code);
+		window.pythonReact = { React, ReactDOM, Welcome };
+
 	}
 )
 

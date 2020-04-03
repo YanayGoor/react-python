@@ -22,28 +22,26 @@ def copytree(src, dst, symlinks=False, ignore=None):
         else:
             shutil.copy2(s, d)
 
-def watch(path_to_watch):
-
 
 def convert(path):
     for subpath in path.iterdir():
         if subpath.is_dir():
             convert(subpath)
         elif subpath.suffix == '.py':
-            with open(subpath, 'r') as py_file:
+            with open(str(subpath), 'r') as py_file:
                 code = py_file.read()
-            with open(subpath.with_suffix('.py.js'), 'w+') as js_file:
+            with open(str(subpath.with_suffix('.py.js')), 'w+') as js_file:
                 js_file.write(TEMPLATE.replace('CODE', code))
             subpath.unlink()
             print(subpath)
         elif subpath.suffix == '.js':
-            with open(subpath, 'r+') as js_file:
+            with open(str(subpath), 'r+') as js_file:
                 code = js_file.read()
                 js_file.seek(0)
                 js_file.truncate()
-                js_file.write(re.sub(IMPORT_REGEX, fr'\g<1>{IMPORT_REPLACE}\g<2>', code))
+                js_file.write(re.sub(IMPORT_REGEX, r'\g<1>{}\g<2>'.format(IMPORT_REPLACE), code))
 
 
 if __name__ == '__main__':
-    copytree(Path(__file__).parent / 'app', Path(__file__).parent / 'src')
+    copytree(str(Path(__file__).parent / 'app'), str(Path(__file__).parent / 'src'))
     convert(Path(__file__).parent / 'src')
