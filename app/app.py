@@ -10,4 +10,3 @@ def app(props, ref):
         createElement(Welcome, {'name': name}),
         createElement(description, {}),
     )
-)
