@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import * as serviceWorker from './serviceWorker';
 
-import appPromise from './app.py';
+import appPromise from './app.py.js';
 
 const Index = () => {
     const [app, setApp] = useState({});

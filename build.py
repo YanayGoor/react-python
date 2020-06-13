@@ -5,6 +5,8 @@ import shutil
 from pathlib import Path
 from textwrap import dedent
 
+from transpile_pyx import transpile_pyx
+
 JS_IMPORT_TEMPLATE = '''import * as NAME from 'FULLNAME';\n'''
 JS_PROMISE_IMPORT_TEMPLATE = '''import NAME from 'FULLNAME';\n'''
 
@@ -65,16 +67,18 @@ def convert(path, src_path):
     for subpath in path.iterdir():
         if subpath.is_dir():
             convert(subpath)
-        elif subpath.suffix == '.py':
+        elif subpath.suffix in ['.py', '.pyx']:
             with open(str(subpath), 'r') as py_file:
                 code = py_file.read()
+                if subpath.suffix in '.pyx':
+                    code = transpile_pyx(code)
             with open(str(subpath.with_suffix('.py.js')), 'w+') as js_file:
                 new = ''
                 new_code = '''from js import pyImports\nimport sys\nglobals()['__name__'] = 'pythonreact'\nglobals()['__package__'] = 'pythonreact'\n'''
                 imports = [name for name in find_imports(code) if name in [path.stem for path in (path.parent / 'node_modules').iterdir()]]
                 relative_js_imports = [name for name in find_imports(code) if name in [path.stem for path in src_path.iterdir() if path.suffix == '.js']]
-                relative_py_imports = [name for name in find_imports(code) if name in [path.stem for path in src_path.iterdir() if path.suffix == '.py']]
-                print(find_imports(code), [path.stem for path in src_path.iterdir() if path.suffix == '.py'])
+                relative_py_imports = [name for name in find_imports(code) if name in [path.stem for path in src_path.iterdir() if path.suffix in ['.py', '.pyx']]]
+                print(find_imports(code), [path.stem for path in src_path.iterdir() if path.suffix in ['.py', '.pyx']])
                 for name in imports:
                     new += JS_IMPORT_TEMPLATE.replace('FULLNAME', name).replace('NAME', name)
                 for name in relative_js_imports:

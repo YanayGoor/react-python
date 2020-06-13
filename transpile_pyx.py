@@ -1,38 +1,25 @@
-APP = '''
-from react import createElement
-from .welcome import Welcome
-from .description import description
-
-
-def app(props, ref):
-    name = props['name']
-
-    return (
-        <div>
-            <Welcome name={name} />
-            <description />
-        </div>
-    )
-'''
-
+from ast import *
 from astunparse import unparse
-from ast import NodeTransformer, dump, parse, Call, Name, Load
 
-print(dump(parse('''createElement('div', {},
-        createElement(Welcome, {'name': name}),
-        createElement(description, {}),
-    )''')))
+
+def _pyx_arg_to_key(kw):
+    return Str(kw.arg) if kw.arg is not None else None
+
 
 class PyxTranspiler(NodeTransformer):
     def visit_Pyx(self, node):
+        children = [self.visit(n) for n in node.children]
         return Call(
-            func=Name(id='createElement', ctx=Load()),
+            func=Attribute(value=Name(id='react', ctx=Load()), attr='createElement', ctx=Load()),
             args=[
-                Name(id=node.name, ctx=Load())
+                Name(id=node.name, ctx=Load()) if node.name[0].isupper() else Str(node.name),
+                Dict(keys=[_pyx_arg_to_key(kw) for kw in node.kwargs],
+                     values=[kw.value for kw in node.kwargs]),
+                *children
             ],
             keywords=[]
         )
 
 
-node = PyxTranspiler().visit(parse(APP))
-print(unparse(node))
+def transpile_pyx(code: str):
+    return unparse(PyxTranspiler().visit(parse(code)))
