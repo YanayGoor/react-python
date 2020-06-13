@@ -1,116 +1,122 @@
-import ast
-import os
 import re
+import ast
 import shutil
 from pathlib import Path
 from textwrap import dedent
 
 from transpile_pyx import transpile_pyx
 
-# JS_IMPORT_TEMPLATE = '''import * as NAME from 'FULLNAME';\n'''
-# JS_PROMISE_IMPORT_TEMPLATE = '''import NAME from 'FULLNAME';\n'''
-#
-# PYIMPORTS_INIT = '''window.pyImports = {};\nconst pyPromises = [];\n'''
-#
-# PYIMPORTS_ADD_TEMPLATE = '''window.pyImports.NAME = NAME;\n'''
-# PYIMPORTS_PROMISE_ADD_TEMPLATE = '''NAME.then(x => { window.pyImports.NAME = x });\npyPromises.push(NAME);\n'''
-#
-# PY_IMPORT_TEMPLATE = '''sys.modules['FULLNAME'] = pyImports.NAME\n'''
-#
-# TEMPLATE = '''const PYTHON = `
-# CODE
-#
-# globals()
-# `;
-#
-# const execute = Promise.all([window.languagePluginLoader, ...pyPromises]).then(() => window.pyodide.runPython(PYTHON))
-#
-# export default execute;
-# '''
-#
-# IMPORT_REGEX = re.compile(r'(\s*import\s+[\w\s{}*]*\s+from\s+[\'|"].\/\w*.)py([\'|"]\s*;?\s*)')
-# IMPORT_REPLACE = r'py.js'
+
+PY_JS_FILE_TEMPLATE = '''import {{ executeFile }} from './pyodideUtils';
+{}
+const pyImports = {{}};
+const pyPromises = [];
+{}
+const PYTHON = `
+{}
+`;
+const execute = executeFile(PYTHON, pyImports, pyPromises);
+export default execute;
+'''
+
+JS_IMPORT_ALL_TEMPLATE = 'import * as {} from \'{}\';'
+
+JS_IMPORT_TEMPLATE = 'import {} from \'{}\';'
+
+REGISTER_PY_IMPORT_TEMPLATE = '''const {}Promise = {}.then(x => {{ pyImports['{}'] = x }});
+pyPromises.push({}Promise);'''
+
+REGISTER_JS_IMPORT_TEMPLATE = 'pyImports[\'{}\'] = {};'
+
+PACKAGE_NAME = 'pythonreact'
 
 
-# def find_imports(code):
-#     """
-#     Finds the imports in a string of code and returns a list of their package
-#     names.
-#     """
-#     # handle mis-indented input from multi-line strings
-#     code = dedent(code)
-#
-#     mod = ast.parse(code)
-#     imports = set()
-#     for node in ast.walk(mod):
-#         if isinstance(node, (ast.Import, ast.ImportFrom)):
-#             relative_name = code.split('\n')[node.lineno - 1].split()[1]
-#             imports.add(relative_name)
-#     return list(imports)
-#
-#
-# def copytree(src, dst, symlinks=False, ignore=None):
-#     for item in os.listdir(src):
-#         s = os.path.join(src, item)
-#         d = os.path.join(dst, item)
-#         if os.path.isdir(s):
-#             shutil.copytree(s, d, symlinks, ignore)
-#         else:
-#             shutil.copy2(s, d)
-#
-#
-# def convert(path, src_path):
-#     for subpath in path.iterdir():
-#         if subpath.is_dir():
-#             convert(subpath)
-#         elif subpath.suffix in ['.py', '.pyx']:
-#             with open(str(subpath), 'r') as py_file:
-#                 code = py_file.read()
-#                 if subpath.suffix in '.pyx':
-#                     code = transpile_pyx(code)
-#             with open(str(subpath.with_suffix('.py.js')), 'w+') as js_file:
-#                 new = ''
-#                 new_code = '''from js import pyImports\nimport sys\nglobals()['__name__'] = 'pythonreact'\nglobals()['__package__'] = 'pythonreact'\n'''
-#                 imports = [name for name in find_imports(code) if name in [path.stem for path in (path.parent / 'node_modules').iterdir()]]
-#                 relative_js_imports = [name for name in find_imports(code) if name in [path.stem for path in src_path.iterdir() if path.suffix == '.js']]
-#                 relative_py_imports = [name for name in find_imports(code) if name in [path.stem for path in src_path.iterdir() if path.suffix in ['.py', '.pyx']]]
-#                 # print(find_imports(code), [path.stem for path in src_path.iterdir() if path.suffix in ['.py', '.pyx']])
-#                 for name in imports:
-#                     new += JS_IMPORT_TEMPLATE.replace('FULLNAME', name).replace('NAME', name)
-#                 for name in relative_js_imports:
-#                     new += JS_IMPORT_TEMPLATE.replace('FULLNAME', './' + name).replace('NAME', name)
-#                 for name in relative_py_imports:
-#                     new += JS_PROMISE_IMPORT_TEMPLATE.replace('FULLNAME', './' + name + '.py.js').replace('NAME', name)
-#                 new += PYIMPORTS_INIT
-#                 for name in imports:
-#                     new += PYIMPORTS_ADD_TEMPLATE.replace('NAME', name)
-#                 for name in relative_js_imports:
-#                     new += PYIMPORTS_ADD_TEMPLATE.replace('NAME', name)
-#                 for name in relative_py_imports:
-#                     new += PYIMPORTS_PROMISE_ADD_TEMPLATE.replace('NAME', name)
-#                 for name in imports:
-#                     new_code += PY_IMPORT_TEMPLATE.replace('FULLNAME', name).replace('NAME', name)
-#                 for name in relative_js_imports:
-#                     new_code += PY_IMPORT_TEMPLATE.replace('FULLNAME', 'pythonreact.' + name).replace('NAME', name)
-#                 for name in relative_py_imports:
-#                     new_code += PY_IMPORT_TEMPLATE.replace('FULLNAME', 'pythonreact.' + name).replace('NAME', name)
-#                 new += TEMPLATE.replace('CODE', new_code + code)
-#                 js_file.write(new)
-#             subpath.unlink()
-#             # print(subpath)
-#         elif subpath.suffix == '.js':
-#             with open(str(subpath), 'r+') as js_file:
-#                 code = js_file.read()
-#                 js_file.seek(0)
-#                 js_file.truncate()
-#                 js_file.write(re.sub(IMPORT_REGEX, r'\g<1>{}\g<2>'.format(IMPORT_REPLACE), code))
+def _find_imports(code):
+    """
+    Finds the imports in a string of code and returns a list of their package
+    names.
+    """
+    # handle mis-indented input from multi-line strings
+    code = dedent(code)
+
+    mod = ast.parse(code)
+    imports = set()
+    for node in ast.walk(mod):
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            relative_name = code.split('\n')[node.lineno - 1].split()[1]
+            imports.add(relative_name)
+    return imports
+
+
+def _find_suffix(path):
+    if path.with_suffix('.py').exists() or path.with_suffix('.pyx').exists():
+        return '.py.js'
+    elif path.with_suffix('.js').exists():
+        return '.js'
+    raise ValueError(f'No file with supported suffix found for - {path}')
+
+
+def _parse_relative_import_name(root_path, rel_path, name):
+    """
+    Get the absolute path of the import and the import path relative to the importer file's path as a string.
+    """
+    import_path = root_path / rel_path
+    path_prefix = ''
+    while name.startswith('.'):
+        if not path_prefix:
+            path_prefix += './'
+        else:
+            path_prefix += '../'
+        import_path = import_path.parent
+        name = name[1:]
+    import_path = import_path / name
+    suffix = _find_suffix(import_path)
+    return import_path.with_suffix(suffix), f'{path_prefix}{name}{suffix}', name
+
+
+def _get_relative_import_lines(root_path, rel_path, name):
+    abs_path, rel_path_str, name = _parse_relative_import_name(root_path, rel_path, name)
+    is_python = rel_path_str.endswith('.py.js')
+
+    import_template = JS_IMPORT_TEMPLATE if is_python else JS_IMPORT_ALL_TEMPLATE
+    package_path = '.'.join([PACKAGE_NAME, *abs_path.relative_to(root_path).parts[:-1], name])
+
+    import_line = import_template.format(name, rel_path_str)
+    if is_python:
+        register_line = REGISTER_PY_IMPORT_TEMPLATE.format(name, name, package_path, name)
+    else:
+        register_line = REGISTER_JS_IMPORT_TEMPLATE.format(package_path, name)
+    return import_line, register_line
+
+
+def _convert_py_code(code, root_path, dst_root_path, rel_path):
+    with open((dst_root_path / rel_path).with_suffix('.py.js'), 'w') as py_file:
+        import_names = _find_imports(code)
+        import_lines = []
+        register_lines = []
+        for name in import_names:
+            if name.startswith('.'):
+                import_line, register_line = _get_relative_import_lines(root_path, rel_path, name)
+                import_lines.append(import_line)
+                register_lines.append(register_line)
+            elif (root_path.parent / 'node_modules' / name).exists():
+                register_lines.append(REGISTER_JS_IMPORT_TEMPLATE.format(name, name))
+                import_lines.append(JS_IMPORT_ALL_TEMPLATE.format(name, name))
+        path = '.'.join([PACKAGE_NAME, *rel_path.with_suffix('').parts])
+        code = PY_JS_FILE_TEMPLATE.format('\n'.join(import_lines), '\n'.join(register_lines), code)
+        py_file.write(code)
+
 
 def convert_py(root_path, dst_root_path, rel_path):
-    pass
+    with open(root_path / rel_path, 'r') as py_file:
+        code = py_file.read()
+    _convert_py_code(code, root_path, dst_root_path, rel_path)
 
 
 def convert_pyx(root_path, dst_root_path, rel_path):
-    pass
+    with open(root_path / rel_path, 'r') as py_file:
+        code = transpile_pyx(py_file.read())
+    _convert_py_code(code, root_path, dst_root_path, rel_path)
 
 
 IMPORT_REGEX = re.compile(r'(\s*import\s+[\w\s{}*]*\s+from\s+[\'|"].\/\w*.)py([\'|"]\s*;?\s*)')

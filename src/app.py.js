@@ -1,13 +1,14 @@
+import { executeFile } from './pyodideUtils';
 import * as react from 'react';
-window.pyImports = {};
+import description from './description.py.js';
+import * as welcome from './welcome.js';
+const pyImports = {};
 const pyPromises = [];
-window.pyImports.react = react;
+pyImports['react'] = react;
+const descriptionPromise = description.then(x => { pyImports['pythonreact.description'] = x });
+pyPromises.push(descriptionPromise);
+pyImports['pythonreact.welcome'] = welcome;
 const PYTHON = `
-from js import pyImports
-import sys
-globals()['__name__'] = 'pythonreact'
-globals()['__package__'] = 'pythonreact'
-sys.modules['react'] = pyImports.react
 
 import react
 from .welcome import Welcome
@@ -17,10 +18,6 @@ def App(props, ref):
     name = props['name']
     return react.createElement('div', {}, react.createElement(Welcome, {'name': name}), react.createElement(Description, {}))
 
-
-globals()
 `;
-
-const execute = Promise.all([window.languagePluginLoader, ...pyPromises]).then(() => window.pyodide.runPython(PYTHON))
-
+const execute = executeFile(PYTHON, pyImports, pyPromises);
 export default execute;
