@@ -4,10 +4,11 @@ export const setCurrentPackage = (env, name) => {
 }
 
 export const setPackages = (env, packages) => {
-    const setModule = window.pyodide.runPython('import sys \nsys.modules.setdefault', env)
+    window.pyodide.runPython('import sys', env)
     Object.entries(packages).forEach(
         ([name, p]) => {
-            setModule(name, p)
+            window.pyodide.pyimport('print')(env.get('sys'))
+            env.get('sys').setdefault(name, p)
         }
     )
 }
