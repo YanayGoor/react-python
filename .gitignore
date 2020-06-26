@@ -12,6 +12,9 @@
 /build
 /python_build
 
+# python
+*.pyc
+
 # misc
 .DS_Store
 .env.local
