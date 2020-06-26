@@ -17,7 +17,7 @@ There where a few steps to making react work seemlessly in python, and a few pro
 - [ ] Making the build script
   - [X] Importing react into python
   - [X] Importing other python file into python
-  - [ ] Importing directories (`__init__.py` files)
+  - [ ] Importing directories (`__init__.py`/`index.js` files)
 
 - [X] Making the JSX/PYX transpiler
   - [X] Modifing the python grammer
