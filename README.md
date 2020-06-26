@@ -5,6 +5,8 @@ All other options for creating react apps (Typescript, coffeescript, etc.) are l
 
 I recently found [The Pyodide project](https://github.com/iodide-project/pyodide), which makes use of LLVM to compile the python (3.7 specificly) interpreter into web assembly so it can run nativly in the browser, sounds like it would go great with react!
 
+Watch the [Live Demo](https://yanaygoor.github.io/react-python/)
+
 ## Project Progress
 
 There where a few steps to making react work seemlessly in python, and a few problems I faced:
