@@ -1,7 +1,7 @@
 {
   "name": "py",
   "version": "0.1.0",
-  "private": true,
+  "homepage": "http://yanaygoor.github.io/react-python",
   "dependencies": {
     "@babel/core": "7.9.0",
     "@svgr/webpack": "4.3.3",
@@ -64,8 +64,10 @@
   },
   "scripts": {
     "start": "./dependencies/pyx_python scripts/start.py",
-    "build": "./dependencies/pyx_python scripts/build.py",
-    "test": "./dependencies/pyx_python scripts/build.py && node scripts/test.js"
+    "build": "./dependencies/pyx_python scripts/build.py && node scripts/build.js",
+    "test": "./dependencies/pyx_python scripts/build.py && node scripts/build.js && node scripts/test.js",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -136,5 +138,8 @@
     "presets": [
       "react-app"
     ]
+  },
+  "devDependencies": {
+    "gh-pages": "^3.1.0"
   }
 }
