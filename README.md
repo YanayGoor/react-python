@@ -3,7 +3,7 @@
 React is a great platform for making web apps, but being a web platform, it is based on writing javascript, which I personally dislike.
 All other options for creating react apps (Typescript, coffeescript, etc.) are languages transpiled into javascript, which makes them simiular to js and do not solve any of the core problems.
 
-I recently found [The Pyodide project](https://github.com/iodide-project/pyodide), which makes use of LLVM to compile the python (3.7 specificly) interpreter into web assembly so it can run nativly in the browser, sounds like it would go great with react!
+I recently found [The Pyodide project](https://github.com/iodide-project/pyodide), which makes use of LLVM to compile the python (3.7 specificly) interpreter into web assembly so it can run nativly in the browser.
 
 ## Project Progress
 
