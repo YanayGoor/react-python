@@ -1,68 +1,31 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+### React - Python
 
-## Available Scripts
+React is a great platform for making web apps, but being a web platform, it is based on writing javascript, which I personally dislike.
+All other options for creating react apps (Typescript, coffeescript, etc.) are languages transpiled into javascript, which makes them simiular to js and do not solve any of the core problems.
 
-In the project directory, you can run:
+I recently found [The Pyodide project](https://github.com/iodide-project/pyodide), which makes use of LLVM to compile the python (3.7 specificly) interpreter into web assembly so it can run nativly in the browser, sounds like it would go great with react!
 
-### `npm start`
+## Project Progress
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+There where a few steps to making react work seemlessly in python, and a few problems I faced:
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+- [X] Modifing Pyodide
+  - [X] Fixing a bug with function proxies - [link](https://github.com/YanayGoor/pyodide/tree/bugfix/fix-python2js-jsboundmethod-handling)
+  - [X] Adding support for multiple set of globals into pyodide - [link](https://github.com/YanayGoor/pyodide/tree/feature/new-env)
+  - [ ] Improving instantiate speed using IndexedDB caching
 
-### `npm test`
+- [ ] Making the build script
+  - [X] Importing react into python
+  - [X] Importing other python file into python
+  - [ ] Importing directories (`__init__.py` files)
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
-
-### Analyzing the Bundle Size
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
-
-### Making a Progressive Web App
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
-
-### Advanced Configuration
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
-
-### Deployment
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
-
-### `npm run build` fails to minify
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+- [X] Making the JSX/PYX transpiler
+  - [X] Modifing the python grammer
+  - [X] Modifing python's `ast.c` - [link](https://github.com/YanayGoor/cpython/tree/feature/pyx)
+  - [X] Using `unparseast`, creating a transpiler script
+  
+- [ ] Node integration
+  - [ ] Making the build script into a webpack/rollup plugin
+  - [ ] Importing Pyodide an an npm package
+  - [ ] creating an npx create-react-python-app
+  
