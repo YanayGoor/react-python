@@ -101,5 +101,8 @@ def MyComponent(props, ref):
     )
 ```
 
+You can import your python components from a js file, you'll get a promise that will be resolved once python is loaded and the file is executed.
+For an example look at `src/index.js`.
+
 ## Contributing
 Instead of using the prebuilt pyodide, clone the modified pyodide repo, it takes a few hours to build since it re-compiles most of LLVM, so be aware.
