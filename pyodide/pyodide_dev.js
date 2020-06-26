@@ -6,8 +6,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   // This is filled in by the Makefile to be either a local file or the
   // deployed location. TODO: This should be done in a less hacky
   // way.
-  var baseURL = self.languagePluginUrl || '';
-  baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/pyodide/';
+  var baseURL = self.languagePluginUrl || '/pyodide/';
+  baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
 
   ////////////////////////////////////////////////////////////
   // Package loading
@@ -332,62 +332,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
-  // caching taken from https://developer.mozilla.org/en-US/docs/WebAssembly/Caching_modules
-  const dbName = 'wasm-cache';
-  const dbVersion = 1;
-  const storeName = 'wasm-cache';
-  const url = 'pyodide';
-
-  function openDatabase() {
-    return new Promise((resolve, reject) => {
-      var request = indexedDB.open(dbName, dbVersion);
-      request.onerror = reject.bind(null, 'Error opening wasm cache database');
-      request.onsuccess = () => { resolve(request.result) };
-      request.onupgradeneeded = event => {
-        var db = request.result;
-        if (db.objectStoreNames.contains(storeName)) {
-            console.log(`Clearing out version ${event.oldVersion} wasm cache`);
-            db.deleteObjectStore(storeName);
-        }
-        console.log(`Creating version ${event.newVersion} wasm cache`);
-        db.createObjectStore(storeName)
-      };
-    });
-  }
-
-  function lookupInDatabase(db) {
-    return new Promise((resolve, reject) => {
-      var store = db.transaction([storeName]).objectStore(storeName);
-      var request = store.get(url);
-      request.onerror = reject.bind(null, `Error getting wasm module ${url}`);
-      request.onsuccess = event => {
-        if (request.result)
-          resolve(request.result);
-        else
-          reject(`Module ${url} was not found in wasm cache`);
-      }
-    });
-  }
-
-  function storeInDatabase(db, module) {
-    var store = db.transaction([storeName], 'readwrite').objectStore(storeName);
-    var request = store.put(module, url);
-    request.onerror = err => { console.log(`Failed to store in wasm cache: ${err}`) };
-    request.onsuccess = err => { console.log(`Successfully stored ${url} in wasm cache`) };
-  }
-
-  // With all the Promise helper functions defined, we can now express the core
-  // logic of an IndexedDB cache lookup. We start by trying to open a database.
-  const cachedModulePromise = openDatabase().then(db => {
-    // Now see if we already have a compiled Module with key 'url' in 'db':
-    return lookupInDatabase(db).then(module => {
-      // We do! Instantiate it with the given import object.
-      console.log(`Found ${url} in wasm cache`);
-      return module;
-    });
-  });
-
-
   let wasm_promise, wasm_fetch = fetch(wasmURL);
   const compileBuffer = () =>
       wasm_fetch.then(response => response.arrayBuffer())
@@ -407,19 +351,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   }
 
   Module.instantiateWasm = (info, receiveInstance) => {
-    cachedModulePromise.then(module => {
-      console.log('loading from cache')
-      WebAssembly.instantiate(module, info).then(instance => receiveInstance(instance))
-    }, err => {
-      wasm_promise.then(module => {
-        const instantiatePromise = WebAssembly.instantiate(module, info);
-        openDatabase().then(db => {
-          storeInDatabase(db, module);
-        });
-        instantiatePromise.then(instance => receiveInstance(instance));
-       });
-      return {};
-    })
+    wasm_promise.then(module => WebAssembly.instantiate(module, info))
+        .then(instance => receiveInstance(instance));
+    return {};
   };
 
   Module.checkABI = function(ABI_number) {

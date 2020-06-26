@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/react-python/static/css/main.dfce74fd.chunk.css",
-    "main.js": "/react-python/static/js/main.224af414.chunk.js",
-    "main.js.map": "/react-python/static/js/main.224af414.chunk.js.map",
+    "main.js": "/react-python/static/js/main.c6101873.chunk.js",
+    "main.js.map": "/react-python/static/js/main.c6101873.chunk.js.map",
     "runtime-main.js": "/react-python/static/js/runtime-main.5845444d.js",
     "runtime-main.js.map": "/react-python/static/js/runtime-main.5845444d.js.map",
     "static/js/2.f4575756.chunk.js": "/react-python/static/js/2.f4575756.chunk.js",
     "static/js/2.f4575756.chunk.js.map": "/react-python/static/js/2.f4575756.chunk.js.map",
     "index.html": "/react-python/index.html",
-    "precache-manifest.ad30b6efc183bcb21c320dfb7372f568.js": "/react-python/precache-manifest.ad30b6efc183bcb21c320dfb7372f568.js",
+    "precache-manifest.c2e71f76a769e70abe1df415af8193e2.js": "/react-python/precache-manifest.c2e71f76a769e70abe1df415af8193e2.js",
     "service-worker.js": "/react-python/service-worker.js",
     "static/css/main.dfce74fd.chunk.css.map": "/react-python/static/css/main.dfce74fd.chunk.css.map",
     "static/js/2.f4575756.chunk.js.LICENSE.txt": "/react-python/static/js/2.f4575756.chunk.js.LICENSE.txt",
@@ -18,6 +18,6 @@
     "static/js/runtime-main.5845444d.js",
     "static/js/2.f4575756.chunk.js",
     "static/css/main.dfce74fd.chunk.css",
-    "static/js/main.224af414.chunk.js"
+    "static/js/main.c6101873.chunk.js"
   ]
 }
