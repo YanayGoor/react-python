@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
 import * as serviceWorker from './serviceWorker';
+import './index.css';
 
-import appPromise from './app.py.js';
+import appPromise from './app.py';
 
 const Index = () => {
     const [app, setApp] = useState({});
@@ -15,9 +15,15 @@ const Index = () => {
     }, [])
 
     if (app.val) {
-        return React.createElement(app.val, {name: 'yanay'})
+        return React.createElement(app.val, {})
     }
-    return 'loading python ...'
+    return (
+        <div className="App">
+            <header className={'App-header'}>
+                <p>Loading python ...</p>
+            </header>
+        </div>
+    );
 }
 
 ReactDOM.render(

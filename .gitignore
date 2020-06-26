@@ -10,6 +10,7 @@
 
 # production
 /build
+/python_build
 
 # misc
 .DS_Store

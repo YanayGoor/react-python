@@ -1,10 +1,17 @@
 import re
 import ast
 import shutil
+import colorama
 from pathlib import Path
 from textwrap import dedent
 
 from transpile_pyx import transpile_pyx
+
+PROJECT_PATH = Path(__file__).parent.parent
+
+SRC_PATH = PROJECT_PATH / 'src'
+BUILD_PATH = PROJECT_PATH / 'python_build'
+PYODIDE_UTILS_PATH = PROJECT_PATH / 'dependencies' / 'pyodideUtils.js'
 
 
 PY_JS_FILE_TEMPLATE = '''import {{ executeFile }} from './pyodideUtils';
@@ -22,9 +29,6 @@ export default execute;
 JS_IMPORT_ALL_TEMPLATE = 'import * as {} from \'{}\';'
 
 JS_IMPORT_TEMPLATE = 'import {} from \'{}\';'
-
-REGISTER_PY_IMPORT_TEMPLATE = '''const {}Promise = {}.then(x => {{ pyImports['{}'] = x }});
-pyPromises.push({}Promise);'''
 
 REGISTER_JS_IMPORT_TEMPLATE = 'pyImports[\'{}\'] = {};'
 
@@ -53,6 +57,10 @@ def _find_suffix(path):
         return '.py.js'
     elif path.with_suffix('.js').exists():
         return '.js'
+    elif path.with_suffix('.css').exists():
+        return '.css'
+    elif path.with_suffix('.svg').exists():
+        return '.svg'
     raise ValueError(f'No file with supported suffix found for - {path}')
 
 
@@ -74,18 +82,46 @@ def _parse_relative_import_name(root_path, rel_path, name):
     return import_path.with_suffix(suffix), f'{path_prefix}{name}{suffix}', name
 
 
+def _get_relative_import_lines_py(rel_path_str, name, package_path):
+    import_line = JS_IMPORT_TEMPLATE.format(name, rel_path_str)
+    register_line = f'const {name}Promise = {name}.then(x => {{ pyImports[\'{package_path}\'] = x }});'\
+                    f'pyPromises.push({name}Promise);'
+    return import_line, register_line
+
+
+def _get_relative_import_lines_svg(rel_path_str, name, package_path):
+    # TODO: Is there a different way other then "from .icon import icon"
+    #   that still is distiguishable between relative and absolute imports?
+    import_line = JS_IMPORT_TEMPLATE.format(name, rel_path_str)
+    register_line = f'pyImports[\'{package_path}\'] = {{ {name} }};'
+    return import_line, register_line
+
+
+def _get_relative_import_lines_css(rel_path_str, name, package_path):
+    # TODO: Is there a different way other then "from .app_style import app_style"
+    #   that still is distiguishable between relative and absolute imports?
+    import_line = JS_IMPORT_TEMPLATE.format(name, rel_path_str)
+    register_line = f'pyImports[\'{package_path}\'] = {{ {name} }};'
+    return import_line, register_line
+
+
+GET_LINES_FROM_SUFFIX = {
+    '.py.js': _get_relative_import_lines_py,
+    '.svg': _get_relative_import_lines_svg,
+    '.css': _get_relative_import_lines_css,
+}
+
+
 def _get_relative_import_lines(root_path, rel_path, name):
     abs_path, rel_path_str, name = _parse_relative_import_name(root_path, rel_path, name)
-    is_python = rel_path_str.endswith('.py.js')
-
-    import_template = JS_IMPORT_TEMPLATE if is_python else JS_IMPORT_ALL_TEMPLATE
     package_path = '.'.join([PACKAGE_NAME, *abs_path.relative_to(root_path).parts[:-1], name])
 
-    import_line = import_template.format(name, rel_path_str)
-    if is_python:
-        register_line = REGISTER_PY_IMPORT_TEMPLATE.format(name, name, package_path, name)
-    else:
-        register_line = REGISTER_JS_IMPORT_TEMPLATE.format(package_path, name)
+    for suffix, parser in GET_LINES_FROM_SUFFIX.items():
+        if rel_path_str.endswith(suffix):
+            return parser(rel_path_str, name, package_path)
+
+    import_line = JS_IMPORT_ALL_TEMPLATE.format(name, rel_path_str)
+    register_line = REGISTER_JS_IMPORT_TEMPLATE.format(package_path, name)
     return import_line, register_line
 
 
@@ -102,7 +138,6 @@ def _convert_py_code(code, root_path, dst_root_path, rel_path):
             elif (root_path.parent / 'node_modules' / name).exists():
                 register_lines.append(REGISTER_JS_IMPORT_TEMPLATE.format(name, name))
                 import_lines.append(JS_IMPORT_ALL_TEMPLATE.format(name, name))
-        path = '.'.join([PACKAGE_NAME, *rel_path.with_suffix('').parts])
         code = PY_JS_FILE_TEMPLATE.format('\n'.join(import_lines), '\n'.join(register_lines), code)
         py_file.write(code)
 
@@ -139,18 +174,22 @@ CONVERT_SUFFIX_MAP = {
 
 
 def convert_file(root_path, dst_root_path, rel_path):
+    print(f'Building {root_path / rel_path}')
     converter = CONVERT_SUFFIX_MAP.get(rel_path.suffix)
     if converter:
         converter(root_path, dst_root_path, rel_path)
     else:
-        shutil.copy2(root_path / rel_path, dst_root_path / rel_path)
+        try:
+            shutil.copy2(root_path / rel_path, dst_root_path / rel_path)
+        except FileNotFoundError:
+            # The watchers might add temporary files
+            pass
 
 
 def convert_folder(root_path, dst_root_path, rel_path):
     if not (dst_root_path / rel_path).exists():
         (dst_root_path / rel_path).mkdir()
     for file in (root_path / rel_path).iterdir():
-        print((root_path / rel_path), file)
         convert(root_path, dst_root_path, file.relative_to(root_path))
 
 
@@ -161,5 +200,12 @@ def convert(root_path, dst_root_path, rel_path=Path('.')):
         convert_file(root_path, dst_root_path, rel_path)
 
 
+def build():
+    print(colorama.Fore.CYAN + 'Started pyx transpilation ...\n' + colorama.Fore.RESET)
+    convert(SRC_PATH, BUILD_PATH)
+    shutil.copy2(PYODIDE_UTILS_PATH, BUILD_PATH / 'pyodideUtils.js')
+    print(colorama.Fore.GREEN + '\nTraspilation successful!' + colorama.Fore.RESET)
+
+
 if __name__ == '__main__':
-    convert(Path(__file__).parent / 'app', Path(__file__).parent / 'src')
+    build()
