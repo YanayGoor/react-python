@@ -7,7 +7,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   // deployed location. TODO: This should be done in a less hacky
   // way.
   var baseURL = self.languagePluginUrl || '';
-  baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/pyodide/';
+  baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/react-python/pyodide/';
 
   ////////////////////////////////////////////////////////////
   // Package loading
